@@ -35,8 +35,6 @@ int main(int argc, char* argv[]) {
       line[strlen(line)-1] = '\0';
     }
 
-    printf("Line: %s\n", line);
-
     // Signal declaration line
     if (startsWith("$var", line)) {
       // Ignore the first 3 parts of string.
@@ -48,7 +46,6 @@ int main(int argc, char* argv[]) {
       token = strtok(NULL, " ");
       signalName = strtok(NULL, " ");
       signalId = token[0];
-      printf ("[SIGNAL DECLARATION] -- Name: %s, Symbol: %c\n", signalName, signalId);
       createSignal(&signals, &nsignals, signalName, signalId);
     }
     else if (startsWith("$dumpvars", line)) {
@@ -74,10 +71,24 @@ int main(int argc, char* argv[]) {
 
   printf("--- FINAL REPORT ---\n");
   int i;
+  Signal *sigShortDelay = NULL,
+         *sigLongDelay = NULL;
   for(i = 0; i < nsignals; i++) {
-    printf("Name: %s, Id: %c, LastSignalUpdate: %d, ShortestSinalDelay: %d, LongestSinalDelay: %d\n\n",
-            signals[i].name, signals[i].identifier, signals[i].lastSignalUpdate, signals[i].shortestSinalDelay, signals[i].longestSinalDelay);
+    printf("[SIGNAL] Name: %-15s Symbol: %-3c LastSignalUpdate: %-6d ShortestSinalDelay: %-6d LongestSinalDelay: %d\n",
+            signals[i].name, signals[i].symbol, signals[i].lastSignalUpdate, signals[i].shortestSinalDelay, signals[i].longestSinalDelay);
+
+    if (sigShortDelay == NULL || signals[i].shortestSinalDelay < sigShortDelay->shortestSinalDelay) {
+      sigShortDelay = &signals[i];
+    }
+
+    if (sigLongDelay == NULL || signals[i].longestSinalDelay > sigLongDelay->longestSinalDelay) {
+      sigLongDelay = &signals[i];
+    }
   }
+
+  printf("\nNumber of Signals: %d\n", nsignals);
+  printf("Shortest delay: signal \"%s\" with delay of %d\n", sigShortDelay ? sigShortDelay->name : "", sigShortDelay ? sigShortDelay->shortestSinalDelay : -1);
+  printf("Longest  delay: signal \"%s\" with delay of %d\n", sigLongDelay ? sigLongDelay->name : "", sigLongDelay ? sigLongDelay->longestSinalDelay : -1);
 
   return 0;
 }
