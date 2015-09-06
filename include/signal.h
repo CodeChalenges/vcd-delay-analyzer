@@ -9,6 +9,8 @@ typedef struct {
   unsigned int longestSinalDelay;
 } Signal;
 
-void assignSignalUpdate(Signal *signal, int clockTick);
+void createSignal(Signal** signals, unsigned int* nsignals, char* name, char identifier);
+Signal* findSignalBySymbol(Signal* signals, unsigned int nsignals, char symbol);
+void assignSignalUpdate(Signal *signal, int timestamp);
 
 #endif

@@ -1,9 +1,36 @@
+#include <stdlib.h>
+#include <string.h>
 #include "signal.h"
 
-void assignSignalUpdate(Signal *signal, int clockTick) {
-  unsigned int delay = clockTick - signal->lastSignalUpdate;
+void createSignal(Signal** signals, unsigned int* nsignals, char* name, char identifier) {
+  Signal* newSignal = (Signal*)malloc(sizeof(newSignal));
+  newSignal->name = (char*)malloc(strlen(name) * sizeof(char));
 
-  signal->lastSignalUpdate = clockTick;
+  strcpy(newSignal->name, name);
+  newSignal->identifier = identifier;
+  newSignal->lastSignalUpdate   = 0;
+  newSignal->shortestSinalDelay = 0;
+  newSignal->longestSinalDelay  = 0;
+
+  *signals = (Signal*)realloc(*signals, (++(*nsignals)) * sizeof(Signal));
+  (*signals)[*nsignals-1] = *newSignal;
+}
+
+Signal* findSignalBySymbol(Signal* signals, unsigned int nsignals, char symbol) {
+  unsigned int i;
+  for (i = 0; i < nsignals; i++) {
+    if (signals[i].identifier == symbol) {
+      return &signals[i];
+    }
+  }
+
+  return NULL;
+}
+
+void assignSignalUpdate(Signal *signal, int timestamp) {
+  unsigned int delay = timestamp - signal->lastSignalUpdate;
+
+  signal->lastSignalUpdate = timestamp;
 
   if (delay < signal->shortestSinalDelay) {
     signal->shortestSinalDelay = delay;
