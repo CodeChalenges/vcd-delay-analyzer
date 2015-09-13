@@ -11,7 +11,7 @@ void createSignal(Signal** signals, unsigned int* nsignals, char* name, char sym
   strcpy(newSignal->name, name);
   newSignal->symbol = symbol;
   newSignal->currentSignalValue = 'X';
-  newSignal->enteredInIdle = 0;
+  newSignal->hasPassedInIdle = 0;
   newSignal->lastSignalChangeTimestamp = 0;
   newSignal->shortestIdleDelay  = UINT_MAX;
   newSignal->longestIdleDelay   = 0;
@@ -31,11 +31,11 @@ Signal* findSignalBySymbol(Signal* signals, unsigned int nsignals, char symbol) 
   return NULL;
 }
 
-void assignSignalUpdate(Signal *signal, char signalValue, int timestamp) {
-  if (signalValue == '0') {
-    signal->enteredInIdle = 1;
+void assignSignalUpdate(Signal *signal, unsigned char signalValue, int timestamp) {
+  if (signalValue == 0) {
+    signal->hasPassedInIdle = 1;
   }
-  else if (signal->currentSignalValue == '0') {
+  else if (signal->currentSignalValue == 0) {
     // Signal leaving idle state:
     // Calculate delay and and check shortest and longest boundaries
     unsigned int delay = timestamp - signal->lastSignalChangeTimestamp;
@@ -54,7 +54,7 @@ void assignSignalUpdate(Signal *signal, char signalValue, int timestamp) {
 }
 
 void closeSignalCounters(Signal* signal, unsigned int timestamp) {
-  if (signal->currentSignalValue == '0') {
+  if (signal->currentSignalValue == 0) {
     unsigned int delay = timestamp - signal->lastSignalChangeTimestamp;
 
     if (delay < signal->shortestIdleDelay) {
@@ -72,6 +72,6 @@ void printSignal(Signal* signal) {
            signal->name,
            signal->symbol,
            signal->lastSignalChangeTimestamp,
-          (signal->enteredInIdle) ? signal->shortestIdleDelay : -1,
-          (signal->enteredInIdle) ? signal->longestIdleDelay  : -1);
+          (signal->hasPassedInIdle) ? signal->shortestIdleDelay : -1,
+          (signal->hasPassedInIdle) ? signal->longestIdleDelay  : -1);
 }

@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
 #include "signal.h"
 #include "utils.h"
 
@@ -56,15 +55,15 @@ int main(int argc, char* argv[]) {
       dumpVarsEnded = 1;
     }
     else if (dumpVarsEnded) {
-      // Timestamp update
       if (line[0] == '#') {
+        // Timestamp update
         char timestampStr[16];
         strcpy(timestampStr, line+1);
         timestamp = atoi(timestampStr);
       }
       else {
-        // Signal assignment
-        char value  = line[0];
+        // Signal value update
+        unsigned char value  = line[0] - 0x30;
         char symbol = line[strlen(line)-1];
         Signal* signal = findSignalBySymbol(signals, nsignals, symbol);
         assignSignalUpdate(signal, value, timestamp);
@@ -78,9 +77,9 @@ int main(int argc, char* argv[]) {
     closeSignalCounters(&signals[i], timestamp);
   }
 
-  printf("--- FINAL REPORT ---\n");
+  printf("--- REPORT ---\n");
   Signal *sigShortDelay = NULL,
-         *sigLongDelay = NULL;
+         *sigLongDelay  = NULL;
   for(i = 0; i < nsignals; i++) {
     printSignal(&signals[i]);
 
