@@ -55,40 +55,46 @@ int main(int argc, char* argv[]) {
       dumpVarsEnded = 1;
     }
     else if (dumpVarsEnded) {
-      // Timestamp update
       if (line[0] == '#') {
+        // Timestamp update
         char timestampStr[16];
         strcpy(timestampStr, line+1);
         timestamp = atoi(timestampStr);
       }
       else {
+        // Signal value update
+        unsigned char value  = line[0] - 0x30;
         char symbol = line[strlen(line)-1];
         Signal* signal = findSignalBySymbol(signals, nsignals, symbol);
-        assignSignalUpdate(signal, timestamp);
+        assignSignalUpdate(signal, value, timestamp);
       }
     }
   }
 
-  printf("--- FINAL REPORT ---\n");
-  int i;
-  Signal *sigShortDelay = NULL,
-         *sigLongDelay = NULL;
-  for(i = 0; i < nsignals; i++) {
-    printf("[SIGNAL] Name: %-15s Symbol: %-3c LastSignalUpdate: %-6d ShortestSinalDelay: %-6d LongestSinalDelay: %d\n",
-            signals[i].name, signals[i].symbol, signals[i].lastSignalUpdate, signals[i].shortestSinalDelay, signals[i].longestSinalDelay);
+  // close all signals counters
+  unsigned int i;
+  for (i = 0; i < nsignals; i++) {
+    closeSignalCounters(&signals[i], timestamp);
+  }
 
-    if (sigShortDelay == NULL || signals[i].shortestSinalDelay < sigShortDelay->shortestSinalDelay) {
+  printf("--- REPORT ---\n");
+  Signal *sigShortDelay = NULL,
+         *sigLongDelay  = NULL;
+  for(i = 0; i < nsignals; i++) {
+    printSignal(&signals[i]);
+
+    if (sigShortDelay == NULL || signals[i].shortestIdleDelay < sigShortDelay->shortestIdleDelay) {
       sigShortDelay = &signals[i];
     }
 
-    if (sigLongDelay == NULL || signals[i].longestSinalDelay > sigLongDelay->longestSinalDelay) {
+    if (sigLongDelay == NULL || signals[i].longestIdleDelay > sigLongDelay->longestIdleDelay) {
       sigLongDelay = &signals[i];
     }
   }
 
   printf("\nNumber of Signals: %d\n", nsignals);
-  printf("Shortest delay: signal \"%s\" with delay of %d\n", sigShortDelay ? sigShortDelay->name : "", sigShortDelay ? sigShortDelay->shortestSinalDelay : -1);
-  printf("Longest  delay: signal \"%s\" with delay of %d\n", sigLongDelay ? sigLongDelay->name : "", sigLongDelay ? sigLongDelay->longestSinalDelay : -1);
+  printf("Shortest delay: signal \"%s\" with delay of %d\n", sigShortDelay ? sigShortDelay->name : "", sigShortDelay ? sigShortDelay->shortestIdleDelay : -1);
+  printf("Longest  delay: signal \"%s\" with delay of %d\n", sigLongDelay ? sigLongDelay->name : "", sigLongDelay ? sigLongDelay->longestIdleDelay : -1);
 
   return 0;
 }

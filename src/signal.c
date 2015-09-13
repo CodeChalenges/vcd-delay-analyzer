@@ -1,5 +1,7 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "signal.h"
 
 void createSignal(Signal** signals, unsigned int* nsignals, char* name, char symbol) {
@@ -8,9 +10,11 @@ void createSignal(Signal** signals, unsigned int* nsignals, char* name, char sym
 
   strcpy(newSignal->name, name);
   newSignal->symbol = symbol;
-  newSignal->lastSignalUpdate   = 0;
-  newSignal->shortestSinalDelay = 0;
-  newSignal->longestSinalDelay  = 0;
+  newSignal->currentSignalValue = 'X';
+  newSignal->hasPassedInIdle = 0;
+  newSignal->lastSignalChangeTimestamp = 0;
+  newSignal->shortestIdleDelay  = UINT_MAX;
+  newSignal->longestIdleDelay   = 0;
 
   *signals = (Signal*)realloc(*signals, (++(*nsignals)) * sizeof(Signal));
   (*signals)[*nsignals-1] = *newSignal;
@@ -27,16 +31,47 @@ Signal* findSignalBySymbol(Signal* signals, unsigned int nsignals, char symbol) 
   return NULL;
 }
 
-void assignSignalUpdate(Signal *signal, int timestamp) {
-  unsigned int delay = timestamp - signal->lastSignalUpdate;
+void assignSignalUpdate(Signal *signal, unsigned char signalValue, int timestamp) {
+  if (signalValue == 0) {
+    signal->hasPassedInIdle = 1;
+  }
+  else if (signal->currentSignalValue == 0) {
+    // Signal leaving idle state:
+    // Calculate delay and and check shortest and longest boundaries
+    unsigned int delay = timestamp - signal->lastSignalChangeTimestamp;
 
-  signal->lastSignalUpdate = timestamp;
+    if (delay < signal->shortestIdleDelay) {
+      signal->shortestIdleDelay = delay;
+    }
 
-  if (delay < signal->shortestSinalDelay) {
-    signal->shortestSinalDelay = delay;
+    if (delay > signal->longestIdleDelay) {
+      signal->longestIdleDelay = delay;
+    }
   }
 
-  if (delay > signal->longestSinalDelay) {
-    signal->longestSinalDelay = delay;
+  signal->currentSignalValue = signalValue;
+  signal->lastSignalChangeTimestamp = timestamp;
+}
+
+void closeSignalCounters(Signal* signal, unsigned int timestamp) {
+  if (signal->currentSignalValue == 0) {
+    unsigned int delay = timestamp - signal->lastSignalChangeTimestamp;
+
+    if (delay < signal->shortestIdleDelay) {
+      signal->shortestIdleDelay = delay;
+    }
+
+    if (delay > signal->longestIdleDelay) {
+      signal->longestIdleDelay = delay;
+    }
   }
+}
+
+void printSignal(Signal* signal) {
+  printf("[SIGNAL] Name: %-15s Symbol: %-3c lastSignalChangeTimestamp: %-6d ShortestIdleDelay: %-6d LongestIdleDelay: %d\n",
+           signal->name,
+           signal->symbol,
+           signal->lastSignalChangeTimestamp,
+          (signal->hasPassedInIdle) ? signal->shortestIdleDelay : -1,
+          (signal->hasPassedInIdle) ? signal->longestIdleDelay  : -1);
 }
